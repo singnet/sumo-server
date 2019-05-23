@@ -12,7 +12,8 @@ To build the image run:
   docker image build -t sumo_server .
 ```
 
-To start the server run:
+After setting the necessary evironment variables like SUMO_SERVER_PORT and LOAD_SUMO_DATA,
+start the server with:
 ```
   docker run -p $SUMO_SERVER_PORT:$SUMO_SERVER_PORT \
         -w /opt/sumo-server \
@@ -63,11 +64,11 @@ The onotologies are arranged in different categories and one must set the enviro
 variable LOAD_SUMO_DATA before starting the server with a list of the categories
 that need to be loaded into the AtomSpace delimited with ":"
 If the server is started without setting the environment variable, the options will
-be displayed.
+be displayed. To load all the ontologies set LOAD_SUMO_DATA to `all-sumo-labeled-kb.scm`
 
-For example after setting LOAD_SUMO_DATA and running the server
+For example after starting the server with following parameters,
 ```
-  export LOAD_SUMO_DATA="Food:Dining"
+  export LOAD_SUMO_DATA="Food:Dining:Economy"
   export SUMO_SERVER_PORT=7084
   docker run -p $SUMO_SERVER_PORT:$SUMO_SERVER_PORT \
         -w /opt/sumo-server \
@@ -78,18 +79,19 @@ For example after setting LOAD_SUMO_DATA and running the server
 ```
 The query
 ```
-  curl localhost:9999/subclasses/Spinach
+  curl localhost:7084/superclasses/spinach
 ```
 will return
 
 ```
 {
-  "SuperClasses" :
+  "SuperClasses" : 
   {
-    "Concept" : "FruitOrVegetable",
-    "Concept" : "LeafyGreenVegetable",
-    "Concept" : "Vegetable"
+    "Concept" : "leafy_green_vegetable",
+    "Concept" : "fruit_or_vegetable",
+    "Concept" : "vegetable"
   }
+}
 ```
 
 ## Scheme client API
