@@ -35,8 +35,8 @@ jobs:
                   cd external-tools/SUMO_importer
                   export PYTHONPATH=$PYTHONPATH:/usr/local/lib/python3/dist-packages
                   ./sumo-opencog.sh
-                  mkdir -vp sumo-data
-                  mv -v /tmp/external-tools/SUMO_importer/sumo/output/*.scm sumo-data
+                  mkdir -vp /root/project/sumo-data
+                  mv -v /tmp/external-tools/SUMO_importer/sumo/output/*.scm /root/project/sumo-data
             - run:
                 name: "run sumo-server"
                 background: true
