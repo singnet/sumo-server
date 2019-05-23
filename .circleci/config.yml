@@ -35,19 +35,17 @@ jobs:
                   cd external-tools/SUMO_importer
                   export PYTHONPATH=$PYTHONPATH:/usr/local/lib/python3/dist-packages
                   ./sumo-opencog.sh
-                  mkdir -vp /root/project/context-enrichment/sumo/sumo-data
-                  mv -v /tmp/external-tools/SUMO_importer/sumo/output/*.scm /root/project/context-enrichment/sumo/sumo-data
+                  mkdir -vp sumo-data
+                  mv -v /tmp/external-tools/SUMO_importer/sumo/output/*.scm sumo-data
             - run:
                 name: "run sumo-server"
                 background: true
-                working_directory: "context-enrichment/sumo"
                 command: |
                   export LOAD_SUMO_DATA="Food:Economy"
                   export SUMO_SERVER_PORT="7084"
                   guile --no-auto-compile -l sumo-server.scm
             - run:
                 name: "test sumo-server"
-                working_directory: "context-enrichment/sumo"
                 command: |
                   sleep 5
                   guile --no-auto-compile -l sumo-server-test.scm
