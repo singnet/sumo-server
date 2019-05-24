@@ -64,7 +64,7 @@ The onotologies are arranged in different categories and one must set the enviro
 variable LOAD_SUMO_DATA before starting the server with a list of the categories
 that need to be loaded into the AtomSpace delimited with ":"
 If the server is started without setting the environment variable, the options will
-be displayed. To load all the ontologies set LOAD_SUMO_DATA to `all-sumo-labeled-kb.scm`
+be displayed. To load all the ontologies set LOAD_SUMO_DATA to `all-sumo-labeled-kb
 
 For example after starting the server with following parameters,
 ```
