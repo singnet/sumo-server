@@ -60,8 +60,8 @@ RUN cd /tmp && \
     make -j$(nproc) && \
     make install && \
     ldconfig && \
-    if [ -f /usr/local/lib/libguile-2.2.so.1.3.0-gdb.scm ] ; then
-    mv /usr/local/lib/libguile-2.2.so.1.3.0-gdb.scm /usr/share/gdb/auto-load/ ;
+    if [ -f /usr/local/lib/libguile-2.2.so.1.3.0-gdb.scm ] ; then \
+    mv /usr/local/lib/libguile-2.2.so.1.3.0-gdb.scm /usr/share/gdb/auto-load/ ; \
     fi
 
 
