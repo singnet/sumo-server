@@ -34,27 +34,27 @@
 ;; correct response
 (test-assert
     (string-contains
-        (get-http-response "http://localhost:7084/subclasses/Vegetable")
-        "Spinach"))
+        (get-http-response "http://localhost:7084/subclasses/vegetable")
+        "spinach"))
 
 (test-assert
     (string-contains
-        (get-http-response "http://localhost:7084/superclasses/Vegetable")
-        "FruitOrVegetable"))
+        (get-http-response "http://localhost:7084/superclasses/vegetable")
+        "fruit_or_vegetable"))
 
 (test-equal
-    (get-http-response "http://localhost:7084/related/Vegetable")
+    (get-http-response "http://localhost:7084/related/vegetable")
     "/related/<integer-depth>/X")
 
-;; Beans shouldn't come as immediate relative to vegetable
+;; beans shouldn't come as immediate relative to vegetable
 (test-assert
     (not
         (string-contains
-            (get-http-response "http://localhost:7084/related/0/Vegetable")
-         "Bean")))
+            (get-http-response "http://localhost:7084/related/0/vegetable")
+         "bean")))
 
 ;; now beans should be present
 (test-assert
     (string-contains
-        (get-http-response "http://localhost:7084/related/1/Vegetable")
-        "Bean"))
+        (get-http-response "http://localhost:7084/related/1/vegetable")
+        "bean"))

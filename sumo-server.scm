@@ -29,10 +29,16 @@
         (list-ref (string-split s #\.) 0))
     (map get-file-name (list-files "./sumo-data/")))
 
-; load sumo data into atomspace
-(define (load-sumo-data)
+
+; load sumo ontologies into atomspace
+(define (load-sumo-data onts)
     (define (set-path-ext s)
         (string-append "./sumo-data/" s ".scm"))
+    (map load-from-path
+        (map set-path-ext
+            (string-split onts #\:))))
+
+(define (load-sumo-data-var)
     (if (not (getenv LOAD-SUMO-ENVVAR))
         (begin
             (newline)
@@ -43,9 +49,7 @@
             (display "Choices are:") (newline)
             (display (get-sumo-files)) (newline)
             (exit)))
-    (map load-from-path
-        (map set-path-ext
-            (string-split (getenv LOAD-SUMO-ENVVAR) #\:))))
+    (load-sumo-data (getenv LOAD-SUMO-ENVVAR)))
 
 (define (nod->alist nod)
     (cons (regexp-substitute/global #f "Node" (format #f "~A" (cog-type nod)) 'pre)
@@ -110,6 +114,9 @@
     (define res (delete-dup-atoms (flatten (map related-to nd))))
     (if (eq? n 0) res (append res (recurse-relation (- n 1) res))))
 
+(define (handle-load-ontologies req)
+    (begin (load-sumo-data req) ""))
+
 (define (handle-subclass req)
     (define res (get-all-subclasses (ConceptNode req)))
     (if (not (eq? res '()))
@@ -147,6 +154,8 @@
     (define resp
         (if (> (length cmd) 1)
             (cond
+                ((string-ci=? (list-ref cmd 0) "loadontologies")
+                    (handle-load-ontologies (list-ref cmd 1)))
                 ((string-ci=? (list-ref cmd 0) "superclasses")
                     (handle-superclass (list-ref cmd 1)))
                 ((string-ci=? (list-ref cmd 0) "subclasses")
@@ -165,7 +174,7 @@
 
 
 ;; Load SUMO data from evironment variable LOAD_SUMO_DATA delimited with :
-(load-sumo-data)
+(load-sumo-data-var)
 
 ;; Start server at port 9999
 

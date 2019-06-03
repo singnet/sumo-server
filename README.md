@@ -57,6 +57,9 @@ whereas the query `/superclasses/chordate` would respond with
 }
 ```
 
+The /loadontologies/X request would load unloaded ontologies into the atomspace
+at runtime.
+Example: `/loadontologies/Military:Government`
 
 
 ## SUMO Files
