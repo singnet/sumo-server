@@ -14,7 +14,8 @@
 
 (use-modules (opencog exec))
 
-(use-modules (ice-9 format)
+(use-modules (ice-9 hash-table)
+             (ice-9 format)
              (ice-9 regex)
              (json))
 
@@ -29,14 +30,30 @@
         (list-ref (string-split s #\.) 0))
     (map get-file-name (list-files "./sumo-data/")))
 
+; create list of ontology categories
+(define (get-cats)
+    (define (rm-ext s) (string-drop-right s 4))
+    (map rm-ext (list-files "./sumo-data/")))
 
-; load sumo ontologies into atomspace
-(define (load-sumo-data onts)
-    (define (set-path-ext s)
-        (string-append "./sumo-data/" s ".scm"))
-    (map load-from-path
-        (map set-path-ext
-            (string-split onts #\:))))
+; hash table to keep track of category->atomspace
+(define sumo-cat-as (make-hash-table))
+
+; populate hash table with cat keys and atomspace vals
+(define (popl-h)
+    (define (set-h cat) 
+        (hash-set! 
+            sumo-cat-as cat 
+            (cog-new-atomspace)))
+    (map set-h (get-cats)))
+
+; load sumo ontologies into respective atomspaces
+(define (load-sumo-data)
+    (define (load-into-as cat)
+        (cog-set-atomspace! (hash-ref sumo-cat-as cat))
+        (load-from-path 
+            (string-append 
+                "./sumo-data/" cat ".scm")))
+    (map load-into-as (get-cats)))
 
 (define (load-sumo-data-var)
     (if (not (getenv LOAD-SUMO-ENVVAR))
@@ -85,24 +102,37 @@
     (delete-dup-atoms (flatten x)))
 
 
-(define (get-all-subclasses papa)
-    (define t
-        (cog-outgoing-set (cog-execute! (GetLink
-                             (InheritanceLink
-                                 (VariableNode "$V")
-                                 papa)))))
-    (cond ((null? t) '())
-        ((list? t) (append t (map get-all-subclasses t)))))
+(define (get-all-subclasses nod cats)
+    (define (get-subclasses papa)
+        (define t
+            (cog-outgoing-set (cog-execute! (GetLink
+                                 (InheritanceLink
+                                     (VariableNode "$V")
+                                     papa)))))
+        (cond ((null? t) '())
+            ((list? t) (append t (map get-subclasses t)))))
+
+    (define (get-res cat)
+        (cog-set-atomspace! (hash-ref sumo-cat-as cat))
+        (get-subclasses nod))
+    (map get-res (string-split cats #\,)))
 
 
-(define (get-all-superclasses child)
-    (define t
-        (cog-outgoing-set (cog-execute! (GetLink
-                             (InheritanceLink
-                                 child
-                                 (VariableNode "$V"))))))
-    (cond ((null? t) '())
-        ((list? t) (append t (map get-all-superclasses t)))))
+(define (get-all-superclasses nod cats)
+    (define (get-superclasses child)
+        (define t
+            (cog-outgoing-set (cog-execute! (GetLink
+                                 (InheritanceLink
+                                     child
+                                     (VariableNode "$V"))))))
+        (cond ((null? t) '())
+            ((list? t) (append t (map get-superclasses t)))))
+
+    (define (get-res cat)
+        (cog-set-atomspace! (hash-ref sumo-cat-as cat))
+        (get-superclasses nod))
+    (map get-res (string-split cats #\,)))
+
 
 
 (define (related-to cn)
