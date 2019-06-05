@@ -14,7 +14,7 @@
 
 (use-modules (opencog exec))
 
-(use-modules (ice-9 hash-table)
+(use-modules (srfi srfi-1)
              (ice-9 format)
              (ice-9 regex)
              (json))
@@ -35,6 +35,8 @@
     (define (rm-ext s) (string-drop-right s 4))
     (map rm-ext (list-files "./sumo-data/")))
 
+(define all-cats (get-cats))
+
 ; hash table to keep track of category->atomspace
 (define sumo-cat-as (make-hash-table))
 
@@ -44,7 +46,7 @@
         (hash-set! 
             sumo-cat-as cat 
             (cog-new-atomspace)))
-    (map set-h (get-cats)))
+    (map set-h all-cats))
 
 ; load sumo ontologies into respective atomspaces
 (define (load-sumo-data)
@@ -53,7 +55,10 @@
         (load-from-path 
             (string-append 
                 "./sumo-data/" cat ".scm")))
-    (map load-into-as (get-cats)))
+    (if (not (eq? (hash-count (const #t) sumo-cat-as) 0))
+        (hash-clear! sumo-cat-as))
+    (popl-h)
+    (map load-into-as all-cats))
 
 (define (load-sumo-data-var)
     (if (not (getenv LOAD-SUMO-ENVVAR))
@@ -101,48 +106,96 @@
 (define (unique-flatten x)
     (delete-dup-atoms (flatten x)))
 
+; TODO n-limited recursion for subclass/superclass query
+; on proc for subclass 
+;   args:
+;       fixed: papa
+;       optional: depth (default 0 -> until null)
+;                 whitelist (default all)
+;                 blacklist (default none)
+; if none of optargs are set procceed as usual
+;    go through all atomspaces for the search
+;    stop search on null results
+; if depth is provided do counted recursion with depth as limit
+;    might need a guard here eg: 0 <= depth <= 100
+;    stop recursion if results are null even if depth is not achieved
+;    depth=0 means all subclasses of subclasses
+;    depth=1 means immediate subclasses
+;    depth=2 means include subclasses of immediate subclasses
+;    and so on...
+; if whitelist is provided, go through the listed atomspace only
+; if blacklist is provided, go through all atomspace except for the
+;    mentioned ones
+
+(define* (sumo-subclasses 
+            papa
+            #:key
+                (depth 0)
+                whitelist
+                blacklist)
+    (define (recur-subclasses nod)
+        (define t
+            (cog-outgoing-set 
+                (cog-execute! 
+                    (GetLink
+                        (InheritanceLink
+                            (VariableNode "$V") 
+                            nod)))))
+            (set! depth (- depth 1))
+            (cond ((or (<= depth 0) (null? t)) '())
+                  ((list? t) (append t (map recur-subclasses t)))))
+    
+    (define (search-sumo-as cat)
+        (begin
+            (cog-set-atomspace! (hash-ref sumo-cat-as cat))
+            (recur-subclasses papa)))
+
+    (if (not (list? whitelist)) 
+        (set! whitelist all-cats))
+    (if (list? blacklist) 
+        (set! whitelist 
+            (lset-difference string-ci=? whitelist blacklist)))
+
+    (map search-sumo-as whitelist))
+
 
 (define (get-all-subclasses nod cats)
-    (define (get-subclasses papa)
-        (define t
-            (cog-outgoing-set (cog-execute! (GetLink
-                                 (InheritanceLink
-                                     (VariableNode "$V")
-                                     papa)))))
-        (cond ((null? t) '())
-            ((list? t) (append t (map get-subclasses t)))))
-
     (define (get-res cat)
         (cog-set-atomspace! (hash-ref sumo-cat-as cat))
         (get-subclasses nod))
     (map get-res (string-split cats #\,)))
 
 
-(define (get-all-superclasses nod cats)
-    (define (get-superclasses child)
-        (define t
-            (cog-outgoing-set (cog-execute! (GetLink
-                                 (InheritanceLink
-                                     child
-                                     (VariableNode "$V"))))))
-        (cond ((null? t) '())
-            ((list? t) (append t (map get-superclasses t)))))
+(define (get-superclasses child)
+    (define t
+        (cog-outgoing-set 
+            (cog-execute!
+                (GetLink
+                    (InheritanceLink
+                        child
+                        (VariableNode "$V"))))))
+    (cond ((null? t) '())
+          ((list? t) (append t (map get-superclasses t)))))
 
+
+(define (get-all-superclasses nod cats)
     (define (get-res cat)
         (cog-set-atomspace! (hash-ref sumo-cat-as cat))
         (get-superclasses nod))
     (map get-res (string-split cats #\,)))
 
 
-
 (define (related-to cn)
     (delete-dup-atoms
         (cog-chase-link 'InheritanceLink 'ConceptNode cn)))
 
+; TODO /related/x query to look for all relations until no new
+;      relationships are found
 (define (recurse-relation n cn)
     (define nd (if (not (list? cn)) (list cn) cn))
-    (define res (delete-dup-atoms (flatten (map related-to nd))))
+    (define res (unique-flatten (map related-to nd)))
     (if (eq? n 0) res (append res (recurse-relation (- n 1) res))))
+
 
 (define (handle-load-ontologies req)
     (begin (load-sumo-data req) ""))
