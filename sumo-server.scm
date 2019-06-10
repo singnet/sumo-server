@@ -22,7 +22,7 @@
 (define help-txt
 "<h2>SUMO Server</h2>
 <h3>Requests</h3>
-/subclasses/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]<br> 
+/subclasses/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]<br>
 /superclasses/X/[depth]/d]/[whitelist/h,b,z]/[blacklist/d,e,f]<br>
 /related/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]")
 
@@ -51,9 +51,9 @@
 
 ; populate hash table with cat keys and atomspace vals
 (define (popl-h)
-    (define (set-h cat) 
-        (hash-set! 
-            sumo-cat-as cat 
+    (define (set-h cat)
+        (hash-set!
+            sumo-cat-as cat
             (cog-new-atomspace)))
     (map set-h all-cats))
 
@@ -61,8 +61,8 @@
 (define (load-sumo-data)
     (define (load-into-as cat)
         (cog-set-atomspace! (hash-ref sumo-cat-as cat))
-        (load-from-path 
-            (string-append 
+        (load-from-path
+            (string-append
                 "./sumo-data/" cat ".scm")))
     (if (not (eq? (hash-count (const #t) sumo-cat-as) 0))
         (hash-clear! sumo-cat-as))
@@ -125,25 +125,25 @@
     (define n depth)
     (define (recur-class-search nod)
         (define t
-            (cog-outgoing-set 
+            (cog-outgoing-set
                 (cog-execute! (search-pattern search-type nod))))
             (cond ((or (<= depth -1) (null? t)) '())
                   (else (append
-                      (if (not (list? t)) (list t) t) 
+                      (if (not (list? t)) (list t) t)
                       (begin
                           (set! depth (- depth 1))
                           (map recur-class-search t))))))
-    
+
     (define (search-sumo-as cat)
         (begin
             (cog-set-atomspace! (hash-ref sumo-cat-as cat))
             (set! depth n)
             (recur-class-search node)))
 
-    (if (not (list? whitelist)) 
+    (if (not (list? whitelist))
         (set! whitelist all-cats))
-    (if (list? blacklist) 
-        (set! whitelist 
+    (if (list? blacklist)
+        (set! whitelist
             (lset-difference string-ci=? whitelist blacklist)))
 
     (map search-sumo-as whitelist))
@@ -165,16 +165,16 @@
         (define nd (if (not (list? cn)) (list cn) cn))
         (define result (unique-flatten (map related-to nd)))
         (if (or (<= n 0) (equal? prev-res-len (length result)))
-            result 
+            result
             (begin
                 (set! prev-res-len (length result))
                 (append result (recurse-relation (- n 1) result)))))
-    
+
     (define (search-r cat)
         (begin
             (cog-set-atomspace! (hash-ref sumo-cat-as cat))
             (recurse-relation depth (cog-new-node 'ConceptNode (cog-name node)))))
-    
+
     (begin
     (if (not (list? whitelist))
         (set! whitelist all-cats))
@@ -244,7 +244,7 @@
 (define black-regex (make-regexp "blacklist/[^/]*" regexp/icase))
 
 (define (parse-req-act req_cmd)
-    (define search-term 
+    (define search-term
         (string-split
             (match:substring
                 (regexp-exec search-type-regex req_cmd))
@@ -269,15 +269,18 @@
                         (match:substring (regexp-exec black-regex req_cmd))
                     #\/)))
             (relation-search-resp
-                (unique-flatten
+                (lset-difference
+                  equal?
+                  (unique-flatten
                     (sumo-relation-search (ConceptNode (cadr search-term))
                         #:depth depth-i
                         #:whitelist (if (equal? (car white-p) "")
                                         all-cats (string-split
                                         (cadr white-p) #\,))
-                        #:blacklist (if (equal? (car black-p) "") 
+                        #:blacklist (if (equal? (car black-p) "")
                                         ""
                                         (string-split (cadr black-p) #\,))))
+                  (list (ConceptNode (cadr search-term))))
                     depth-i)))
           (else
             (let ((depth-p
@@ -293,20 +296,23 @@
                         (match:substring (regexp-exec black-regex req_cmd))
                     #\/)))
             (class-search-resp
-                (unique-flatten 
-                    (sumo-class-search (ConceptNode (cadr search-term))
-                        #:search-type (car search-term)
-                        #:depth (if (equal? (car depth-p) "")
-                                    -1 
-                                    (string->number (cadr depth-p)))
-                        #:whitelist (if (equal? (car white-p) "")
-                                        all-cats (string-split
-                                        (cadr white-p) #\,))
-                        #:blacklist (if (equal? (car black-p) "") 
-                                        ""
-                                        (string-split (cadr black-p) #\,))))
-                    (car search-term))))))
-                
+                (lset-difference
+                    equal?
+                    (unique-flatten
+                        (sumo-class-search (ConceptNode (cadr search-term))
+                            #:search-type (car search-term)
+                            #:depth (if (equal? (car depth-p) "")
+                                        -1
+                                        (string->number (cadr depth-p)))
+                            #:whitelist (if (equal? (car white-p) "")
+                                            all-cats (string-split
+                                            (cadr white-p) #\,))
+                            #:blacklist (if (equal? (car black-p) "")
+                                            ""
+                                            (string-split (cadr black-p) #\,))))
+                    (list (ConceptNode (cadr search-term))))
+                        (car search-term))))))
+
 
 (define (wrequest-handler req req-body)
     (define cmd
