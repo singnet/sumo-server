@@ -27,7 +27,6 @@
 /related/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]")
 
 
-
 (define sumo-port 7083)
 (if (getenv "SUMO_SERVER_PORT")
     (set! sumo-port (string->number (getenv "SUMO_SERVER_PORT"))))
@@ -69,19 +68,6 @@
         (hash-clear! sumo-cat-as))
     (popl-h)
     (map load-into-as all-cats))
-
-(define (load-sumo-data-var)
-    (if (not (getenv LOAD-SUMO-ENVVAR))
-        (begin
-            (newline)
-            (display "** Please Set Environment Variable LOAD_SUMO_DATA **")
-            (newline)
-            (display "** Use Delimiter ':' **")
-            (newline)
-            (display "Choices are:") (newline)
-            (display (get-sumo-files)) (newline)
-            (exit)))
-    (load-sumo-data (getenv LOAD-SUMO-ENVVAR)))
 
 (define (nod->alist nod)
     (cons (regexp-substitute/global #f "Node" (format #f "~A" (cog-type nod)) 'pre)
@@ -127,34 +113,8 @@
                 node
                 (VariableNode "$V")))))
 
-                
-
-
-; TODO n-limited recursion for subclass/superclass query
-; on proc for subclass 
-;   args:
-;       fixed: node
-;       optional: search-type (default subclass)
-;                 depth (default 0 -> until null)
-;                 whitelist (default all)
-;                 blacklist (default none)
-; if none of optargs are set procceed as usual
-;    go through all atomspaces for the search
-;    stop search on null results
-; if depth is provided do counted recursion with depth as limit
-;    might need a guard here eg: 0 <= depth <= 100
-;    stop recursion if results are null even if depth is not achieved
-;    depth=0 means all subclasses of subclasses
-;    depth=1 means immediate subclasses
-;    depth=2 means include subclasses of immediate subclasses
-;    and so on...
-; if whitelist is provided, go through the listed atomspace only
-; if blacklist is provided, go through all atomspace except for the
-;    mentioned ones
-
 ; XXX a little hacky with the recursion depth control
 ;     should be improved!
-
 (define* (sumo-class-search
             node
             #:key
@@ -193,14 +153,6 @@
     (delete-dup-atoms
         (cog-chase-link 'InheritanceLink 'ConceptNode cn)))
 
-(define (reld-to cn)
-    (delete-dup-atoms
-        (cog-chase-link 'InheritanceLink 'ConceptNode cn)))
-
-; TODO /related/x query to look for all relations until no new
-;      relationships are found
-
-
 (define* (sumo-relation-search node
                                #:key
                                 (depth 0)
@@ -231,10 +183,6 @@
             (lset-difference string-ci=? whitelist blacklist))))
     (map search-r whitelist))
 
-    
-
-
-
 (define (class-search-resp resp type)
     (if (not (eq? resp '()))
         (scm->json-string
@@ -256,10 +204,7 @@
 ; /subclasses/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]
 ; /superclasses/X/[depth]/d]/[whitelist/h,b,z]/[blacklist/d,e,f]
 ; /related/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]
-;   first comes search_type, then search_term then an optinal depth
-;   followed by either of the token blacklist or whitelist each 
-;   followd by a comma delimited list of ontology categories
-; checks
+;
 ; each pair of segments must have the format: REQ_TYPE/REQ
 ; where REQ_TYPE can be one of :
 ;    subclassses, superclasses, related, depth, whitelist, blacklist
@@ -283,7 +228,7 @@
 ; XXX may not be necessary having this function
 ; match:start of ice-9 throws an error when constant
 ; in regex doesn't match because then arg:match is #f
-; and not a vector
+; not a vector
 ; it's redefined here with a check for arg:match
 (define* (match:substring match #:optional (n 0))
   (if match
@@ -377,8 +322,6 @@
 
 ;; Load SUMO data from evironment variable LOAD_SUMO_DATA delimited with :
 (load-sumo-data)
-
-;; Start server at port 9999
 
 (run-server wrequest-handler 'http (list #:addr 0 #:port sumo-port))
 ;(call-with-new-thread
