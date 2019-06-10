@@ -2,7 +2,8 @@
     #:export
         (reset-sumo-server
         set-sumo-server
-        sumo-search))
+        sumo-search
+        sumo-categories))
 
 
 (use-modules (opencog)
@@ -64,6 +65,17 @@
         (map cdr
             (cdar
                 (json-string->scm resp))))) '()))
+
+(define (sumo-categories)
+"
+    sumo-categories - fetch a list of categories for white/blacklisting queries
+
+    return: a list of categories
+"
+    (string-split
+        (get-http-response
+            (string-append sumo-server "/cats"))
+        #\,))
 
 (define search-options (list "subclasses" "superclasses" "related"))
 

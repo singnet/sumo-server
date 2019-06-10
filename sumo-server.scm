@@ -26,7 +26,6 @@
 /superclasses/X/[depth]/d]/[whitelist/h,b,z]/[blacklist/d,e,f]<br>
 /related/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]")
 
-
 (define sumo-port 7083)
 (if (getenv "SUMO_SERVER_PORT")
     (set! sumo-port (string->number (getenv "SUMO_SERVER_PORT"))))
@@ -44,7 +43,8 @@
     (map rm-ext (list-files "./sumo-data/")))
 
 (define all-cats (get-cats))
-
+(define (append-comma s) (string-append s ","))
+(define cats-str (string-concatenate (map append-comma all-cats)))
 
 ; hash table to keep track of category->atomspace
 (define sumo-cat-as (make-hash-table))
@@ -313,14 +313,15 @@
                     (list (ConceptNode (cadr search-term))))
                         (car search-term))))))
 
-
 (define (wrequest-handler req req-body)
     (define cmd
         (split-and-decode-uri-path (uri-path (request-uri req))))
     (define resp
-        (if (> (length cmd) 1)
-            (parse-req-act (uri-path (request-uri req)))
-            help-txt)
+        (cond ((and (= (length cmd) 1) (string-ci=? (list-ref cmd 0) "cats"))
+                cats-str)
+            ((> (length cmd) 1)
+            (parse-req-act (uri-path (request-uri req))))
+            (else help-txt))
     )
     (values '((content-type . (text/plain))) resp)
 )
