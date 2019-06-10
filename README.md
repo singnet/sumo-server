@@ -12,22 +12,31 @@ To build the image run:
   docker image build -t sumo_server .
 ```
 
-After setting the necessary evironment variables like SUMO_SERVER_PORT and LOAD_SUMO_DATA,
+After setting the evironment variables SUMO_SERVER_PORT,
 start the server with:
 ```
   docker run -p $SUMO_SERVER_PORT:$SUMO_SERVER_PORT \
         -w /opt/sumo-server \
-        -e LOAD_SUMO_DATA \
         -e SUMO_SERVER_PORT \
         sumo_server \
         guile --no-auto-compile -l sumo-server.scm
 ```
 
 ## Query
-Currently, /subclasses/X , /superclasses/X and /related/<depth>/X are available.
-/related/<depth>/X would fetch ConceptNodes related to X. The depth limits
-how far the relationship should go. A depth of 0 means immediate/direct relations.
+Currently, the following type of requests are supported
+    * /subclasses/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]
+    * /superclasses/X/[depth]/d]/[whitelist/h,b,z]/[blacklist/d,e,f]
+    * /related/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]
+
+ each pair of segments must have the format: REQ_TYPE/REQ
+ where REQ_TYPE can be one of :
+    subclassses, superclasses, related, depth, whitelist, blacklist 
+ 
+/related/X would fetch ConceptNodes related to X until results start to
+get redundany. The depth limits how far the relationship should go.
+A depth of 0 means immediate/direct relations.
 These relations are InheritanceLinks.
+
 /subclasses/X would fetch every descendant of (ConceptNode "X")
 for example if the following exists in the AtomSpace:
 ```
@@ -56,26 +65,20 @@ whereas the query `/superclasses/chordate` would respond with
   }
 }
 ```
-
-The /loadontologies/X request would load unloaded ontologies into the atomspace
-at runtime.
-Example: `/loadontologies/Military:Government`
-
+The above queries can be black/white listed by using /whitelist/Y /blacklist/Z
+segments. The values Y and Z should be comma delimited list of SUMO categories.
 
 ## SUMO Files
-The onotologies are arranged in different categories and one must set the environment
-variable LOAD_SUMO_DATA before starting the server with a list of the categories
-that need to be loaded into the AtomSpace delimited with ":"
-If the server is started without setting the environment variable, the options will
-be displayed. To load all the ontologies set LOAD_SUMO_DATA to `all-sumo-labeled-kb
+The onotologies are arranged in different categories and when the server is
+started, each category of ontologies are loaded into separate atomspaces.
+Each atomspace named in the whitelist is searched and each atomspace named
+in blacklist is skipped.
 
 For example after starting the server with following parameters,
 ```
-  export LOAD_SUMO_DATA="Food:Dining:Economy"
   export SUMO_SERVER_PORT=7084
   docker run -p $SUMO_SERVER_PORT:$SUMO_SERVER_PORT \
         -w /opt/sumo-server \
-        -e LOAD_SUMO_DATA \
         -e SUMO_SERVER_PORT \
         sumo_server \
         guile --no-auto-compile -l sumo-server.scm
@@ -100,4 +103,19 @@ will return
 ## Scheme client API
 
 A client api for Scheme is provided in a scheme module in api/scheme/sumo.scm
-
+To use the API,
+```
+  (use-modules (sumo))
+  (set-sumo-server "http://localhost:7083")
+  (sumo-search (ConceptNode "device") "related" #:depth 0 #:whitelist "Transportation" #:blacklist "Cars")
+```
+The above query would result in the following atomese
+```
+(EvaluationLink
+    (PredicateNode "Related")
+    (ListLink
+        (ConceptNode "canal_lock_gate")
+        (ConceptNode "device")
+    )
+)
+```
