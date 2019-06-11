@@ -26,11 +26,7 @@
 /superclasses/X/[depth]/d]/[whitelist/h,b,z]/[blacklist/d,e,f]<br>
 /related/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]")
 
-(define sumo-port 7083)
-(if (getenv "SUMO_SERVER_PORT")
-    (set! sumo-port (string->number (getenv "SUMO_SERVER_PORT"))))
-
-(define LOAD-SUMO-ENVVAR "LOAD_SUMO_DATA")
+(define sumo-port 9999)
 
 (define (get-sumo-files)
     (define (get-file-name s)
@@ -327,7 +323,7 @@
 )
 
 
-;; Load SUMO data from evironment variable LOAD_SUMO_DATA delimited with :
+;; Load SUMO ontologies into separate atomspaces
 (load-sumo-data)
 
 (run-server wrequest-handler 'http (list #:addr 0 #:port sumo-port))
