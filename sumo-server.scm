@@ -20,10 +20,10 @@
              (json))
 
 (define help-txt
-"<h2>SUMO Server</h2>
-<h3>Requests</h3>
-/subclasses/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]<br>
-/superclasses/X/[depth]/d]/[whitelist/h,b,z]/[blacklist/d,e,f]<br>
+"SUMO Server
+Requests
+/subclasses/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]
+/superclasses/X/[depth]/d]/[whitelist/h,b,z]/[blacklist/d,e,f]
 /related/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]")
 
 (define sumo-port 9999)
@@ -115,7 +115,7 @@
             node
             #:key
                 (search-type "subclasses")
-                (depth -1)
+                (depth 0)
                 (whitelist "non")
                 (blacklist "non"))
     (define n depth)
@@ -246,10 +246,7 @@
                 (regexp-exec search-type-regex req_cmd))
         #\/))
     (cond ((not (= (length search-term) 2))
-            (string-append "<h3>requests</h3><br>"
-            "/subclasses/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]<br>"
-            "/superclasses/X/[depth]/d]/[whitelist/h,b,z]/[blacklist/d,e,f]<br>"
-            "/related/X/[depth/d]/[blacklist/a,b,z]/[whitelist/d,e,f]"))
+            help-txt)
           ((string-ci=? (car search-term) "related")
             (let* ((depth-p
                     (string-split
@@ -298,7 +295,7 @@
                         (sumo-class-search (ConceptNode (cadr search-term))
                             #:search-type (car search-term)
                             #:depth (if (equal? (car depth-p) "")
-                                        -1
+                                        0
                                         (string->number (cadr depth-p)))
                             #:whitelist (if (equal? (car white-p) "")
                                             all-cats (string-split
