@@ -24,7 +24,7 @@ case $1 in
   start) docker-run -w /opt/sumo-server -p 7083:9999 \
          --rm -d $image \
          guile --no-auto-compile sumo-server.scm ;;
-  shell) docker-run --rm -it $image bash ;;
+  shell) docker-run --rm -it -p 7083:9999 $image bash ;;
   stop) docker stop $container ;;
   *) help ;;
 esac
