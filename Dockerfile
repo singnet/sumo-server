@@ -110,7 +110,7 @@ RUN cd /tmp && \
     export PYTHONPATH=$PYTHONPATH:/usr/local/lib/python3/dist-packages && \
     ./sumo-opencog.sh && \
     mkdir -p ${SUMO_SERVER_DIR}/sumo-data && \
-    mv -f all-sumo-labeled-kb.scm ./sumo/output/*.scm ${SUMO_SERVER_DIR}/sumo-data
+    mv -f ./sumo/output/*.scm ${SUMO_SERVER_DIR}/sumo-data
 
 ADD . ${SUMO_SERVER_DIR}
 

@@ -47,7 +47,7 @@ jobs:
             - run:
                 name: "test sumo-server"
                 command: |
-                  sleep 5
+                  sleep 60
                   guile --no-auto-compile -l sumo-server-test.scm
                   kill $(pidof guile)
 workflows:
