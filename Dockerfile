@@ -105,7 +105,7 @@ RUN cd /tmp && \
     make install
 
 RUN cd /tmp && \
-    git clone --depth 1 https://github.com/dagiopia/external-tools.git && \
+    git clone --branch va_sumo --depth 1 https://github.com/singnet/external-tools.git && \
     cd external-tools/SUMO_importer && \
     export PYTHONPATH=$PYTHONPATH:/usr/local/lib/python3/dist-packages && \
     ./sumo-opencog.sh && \
